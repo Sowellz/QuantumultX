@@ -1,11 +1,15 @@
 /*
 种豆得豆 搬的https://github.com/uniqueque/QuantumultX/blob/4c1572d93d4d4f883f483f907120a75d925a693e/Script/jd_joy.js
+更新时间：2020-07-06，新增完成低价包邮的任务，优化弹窗信息
 会自动关注任务中的店铺跟商品
+互助码shareCode请先手动运行脚本查看打印可看到
 // quantumultx
 [task_local]
-1 7-21/2 * * * jd_plantBean.js
+1 7-21/2 * * * https://github.com/nzw9314/QuantumultX/raw/master/Task/jd_plantBean.js, tag=种豆得豆, img-url=https://raw.githubusercontent.com/znz1992/Gallery/master/jdzd.png, enabled=true
 // Loon
+[Script]
 cron "1 7-21/2 * * *" script-path=https://github.com/nzw9314/QuantumultX/raw/master/Task/jd_plantBean.js,tag=京东种豆得豆
+一天只能帮助3个人。多出的助力码无效
 */
 
 const $hammer = (() => {
@@ -30,15 +34,15 @@ const $hammer = (() => {
     };
     const request = (method, params, callback) => {
         /**
-         * 
+         *
          * params(<object>): {url: <string>, headers: <object>, body: <string>} | <url string>
-         * 
+         *
          * callback(
-         *      error, 
+         *      error,
          *      <response-body string>?,
          *      {status: <int>, headers: <object>, body: <string>}?
          * )
-         * 
+         *
          */
         let options = {};
         if (typeof params == "string") {
@@ -136,12 +140,16 @@ Task.next();
 
 function* step() {
     //
-    let message = ''
+    let message = '', subTitle = '';
+    const startTime = Date.now();
     if (cookie) {
         console.log(`获取任务及基本信息`)
         let plantBeanIndexResult = yield plantBeanIndex()
         if (plantBeanIndexResult.code != "0") {
             console.log(`plantBeanIndexResult:${JSON.stringify(plantBeanIndexResult)}`)
+            if (plantBeanIndexResult.code === '3') {
+              return $hammer.alert(name, '\n【提示】京东cookie已失效,请重新登录获取\n');
+            }
             //todo
             return
         }
@@ -149,10 +157,31 @@ function* step() {
         currentRoundId = roundList[1].roundId;
         lastRoundId = roundList[0].roundId;
         awardState = roundList[0].awardState;
+        subTitle = plantBeanIndexResult.data.plantUserInfo.plantNickName;
+        message += `【上期时间】${roundList[0].dateDesc}\n`;
+        message += `【上期成长值】${roundList[0].growth}\n`;
+        //定时领取--放到前面执行收取自动生产的营养液
+        if (plantBeanIndexResult.data.timeNutrientsRes.state == 1 && plantBeanIndexResult.data.timeNutrientsRes.nutrCount > 0) {
+          console.log(`开始领取定时产生的营养液`)
+          let receiveNutrientsResult = yield receiveNutrients(plantBeanRound.roundId)
+          console.log(`receiveNutrientsResult:${JSON.stringify(receiveNutrientsResult)}`)
+        }
+        if (roundList[0].beanState == 4 && roundList[0].awardState == 4) {
+          message += `【上期状态】${roundList[0].tipBeanEndTitle}\n`;
+        }
+        if (roundList[0].awardBeans) {
+          message += `【上期${roundList[0].growth}成长值兑换京豆】${roundList[0].awardBeans}\n`;
+        }
+        if (roundList[1].dateDesc.indexOf('本期 ') > -1) {
+          roundList[1].dateDesc = roundList[1].dateDesc.substr(roundList[1].dateDesc.indexOf('本期 ') + 3, roundList[1].dateDesc.length);
+        }
+        message += `【本期时间】${roundList[1].dateDesc}\n`;
+        message += `【本期成长值】${roundList[1].growth}\n`;
         let shareUrl = plantBeanIndexResult.data.jwordShareInfo.shareUrl
         let myPlantUuid = getParam(shareUrl, 'plantUuid')
-        console.log(`你的plantUuid为${myPlantUuid}`)
-        for (let task of plantBeanIndexResult.data.taskList) {
+        // console.log(`你的plantUuid为${myPlantUuid}`)
+        console.log(`\n【您的互助码plantUuid】 ${myPlantUuid}\n`);
+      for (let task of plantBeanIndexResult.data.taskList) {
             console.log(`开始【${task.taskName}】任务`)
             if (task.taskType == 7 || task.taskType == 17 || task.taskType == 18) {
                 //具体每个人可能不一样
@@ -261,6 +290,18 @@ function* step() {
                         console.log(`purchaseRewardTaskResult:${JSON.stringify(purchaseRewardTaskResult)}`)
                     }
                 }
+            } else if (task.taskType == 19) {
+              // 低价包邮
+              if (task.isFinished !== 1) {
+                let plantReceiveNutrientsTaskRes = yield plantReceiveNutrientsTask();
+                console.log(`${task.taskName}获取营养液：：${plantReceiveNutrientsTaskRes.data && plantReceiveNutrientsTaskRes.data.nutrNum}`)
+              }
+            } else if (task.taskType == 20) {
+              // 助力高考
+              if (task.isFinished !== 1) {
+                let plantReceiveNutrientsTaskRes = yield receiveNutrientsTask(task.taskType);
+                console.log(`${task.taskName}获取营养液：：${plantReceiveNutrientsTaskRes.data && plantReceiveNutrientsTaskRes.data.nutrNum}`)
+              }
             } else if (task.taskType == 1) {
                 console.log('跳过签到，NobyDa的会签')
                 // console.log(`【${task.taskName}】未开发${task.awardType},${task.taskType}`)
@@ -291,9 +332,22 @@ function* step() {
             }
         }
 
-        //todo 扭蛋
-
-
+        //天天扭蛋功能
+        let eggChance = yield egg();
+        if (eggChance.code == 0) {
+          if (eggChance.data.restLotteryNum > 0) {
+            const eggL = new Array(eggChance.data.restLotteryNum).fill('');
+            for (let i = 0; i < eggL.length; i++) {
+              console.log(`开始第${i+1}次扭蛋`);
+              let plantEggDoLotteryRes = yield plantEggDoLottery();
+              console.log(`天天扭蛋成功：${JSON.stringify(plantEggDoLotteryRes)}`);
+            }
+          } else {
+            console.log('暂无扭蛋机会')
+          }
+        } else {
+          console.log('查询天天扭蛋的机会失败')
+        }
         plantBeanIndexResult = yield plantBeanIndex()
         if (plantBeanIndexResult.code == '0') {
             let plantBeanRound = plantBeanIndexResult.data.roundList[1]
@@ -305,12 +359,6 @@ function* step() {
                     let cultureBeanResult = yield cultureBean(plantBeanRound.roundId, bubbleInfo.nutrientsType)
                     console.log(`cultureBeanResult:${JSON.stringify(cultureBeanResult)}`)
                 }
-                //定时领取
-                if (plantBeanIndexResult.data.timeNutrientsRes.state == 1 && plantBeanIndexResult.data.timeNutrientsRes.nutrCount > 0) {
-                    console.log(`开始领取定时产生的营养液`)
-                    let receiveNutrientsResult = yield receiveNutrients(plantBeanRound.roundId)
-                    console.log(`receiveNutrientsResult:${JSON.stringify(receiveNutrientsResult)}`)
-                }
             }
         } else {
             console.log(`plantBeanIndexResult:${JSON.stringify(plantBeanIndexResult)}`)
@@ -320,7 +368,6 @@ function* step() {
         if (stealRes.code == 0) {
           if (stealRes.data.tips) {
             console.log('今日已达上限');
-            return
           }
           if (stealRes.data && stealRes.data.friendInfoList && stealRes.data.friendInfoList.length > 0) {
             for (let item of stealRes.data.friendInfoList) {
@@ -337,13 +384,19 @@ function* step() {
           }
         }
         //收获
-        let res = yield getReward();
-        console.log(`种豆得豆收获的京豆情况---res,${JSON.stringify(res)}`);
+        if (awardState === '5') {
+          let res = yield getReward();
+          console.log(`种豆得豆收获的京豆情况---res,${JSON.stringify(res)}`);
+        } else if (awardState === '6') {
+          console.log("上轮活动您已领奖，去京豆明细页看看");
+        }
         console.log('结束')
     } else {
         message = '请先获取cookie\n直接使用NobyDa的京东签到获取'
     }
-    $hammer.alert(name, message)
+    const end = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`\n完成${name}脚本耗时:  ${end} 秒\n`);
+    $hammer.alert(name, message, subTitle);
 }
 
 function purchaseRewardTask(roundId) {
@@ -356,7 +409,11 @@ function purchaseRewardTask(roundId) {
     }
     request(functionId, body);// `body=${escape(JSON.stringify(body))}&uuid=&appid=ld`
 }
-
+//低价包邮
+function plantReceiveNutrientsTask() {
+  const body = {"monitor_refer":"plant_receiveNutrientsTask","monitor_source":"plant_app_plant_index","awardType":"19","version":"9.0.0.1"};
+  request('receiveNutrientsTask', body);
+}
 function receiveNutrientsTask(awardType) {
     // let functionId = arguments.callee.name.toString();
     // let body = {
@@ -451,14 +508,20 @@ function helpShare(plantUuid) {
     }
     request(`plantBeanIndex`, body);
 }
-
+//查询天天扭蛋的机会
+function egg() {
+  request('plantEggLotteryIndex');
+}
+// 调用扭蛋api
+function plantEggDoLottery() {
+  request('plantEggDoLottery');
+}
 function plantBeanIndex() {
     // https://api.m.jd.com/client.action?functionId=plantBeanIndex
     let functionId = arguments.callee.name.toString();
     let body = { "monitor_source": "plant_app_plant_index", "monitor_refer": "", "version": "9.0.0.1" }
     request(functionId, body);//plantBeanIndexBody
 }
-
 //偷营养液大于等于3瓶的好友
 //①查询好友列表
 function steal() {
@@ -480,14 +543,10 @@ function collectUserNutr(paradiseUuid) {
 }
 //每轮种豆活动获取结束后,自动收取京豆
 function getReward() {
-  if (awardState === '5') {
-    const body = {
-      "roundId": lastRoundId
-    }
-    request('receivedBean', body);
-  } else if (awardState === '6') {
-    console.log("上轮活动您已领奖，去京豆明细页看看");
+  const body = {
+    "roundId": lastRoundId
   }
+  request('receivedBean', body);
 }
 function requestGet(url){
     const option =  {
@@ -514,7 +573,14 @@ function taskurl(function_id, body) {
         url: JD_API_HOST,
         body: `functionId=${function_id}&body=${JSON.stringify(body)}&appid=ld&client=apple&clientVersion=&networkType=&osVersion=&uuid=`,
         headers: {
-            Cookie: cookie,
+            'Cookie': cookie,
+            'Host': 'api.m.jd.com',
+            'Accept': '*/*',
+            'Connection': 'keep-alive',
+            'User-Agent': 'JD4iPhone/167249 (iPhone;iOS 13.5.1;Scale/3.00)',
+            'Accept-Language': 'zh-Hans-CN;q=1,en-CN;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Content-Type': "application/x-www-form-urlencoded"
         }
     }
 }

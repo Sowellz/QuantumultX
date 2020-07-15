@@ -1,6 +1,140 @@
 {
   "releases": [
     {
+      "version": "0.4.7",
+      "tags": ["beta"],
+      "author": "@chavyleung",
+      "icon": "https://avatars3.githubusercontent.com/u/29748519",
+      "repo": "https://github.com/chavyleung",
+      "notes": [
+        {
+          "name": "修复",
+          "descs": ["部分情况下无法清空会话数值问题 (更新脚本后, 需要手动刷新下订阅)"]
+        }
+      ]
+    },
+    {
+      "version": "0.4.6",
+      "tags": ["beta"],
+      "author": "@chavyleung",
+      "icon": "https://avatars3.githubusercontent.com/u/29748519",
+      "repo": "https://github.com/chavyleung",
+      "notes": [
+        {
+          "name": "优化",
+          "descs": ["透明图标处理"]
+        }
+      ]
+    },
+    {
+      "version": "0.4.5",
+      "tags": ["beta"],
+      "author": "@chavyleung",
+      "icon": "https://avatars3.githubusercontent.com/u/29748519",
+      "repo": "https://github.com/chavyleung",
+      "notes": [
+        {
+          "name": "修复",
+          "descs": ["部分情况下内置应用不显示问题"]
+        }
+      ]
+    },
+    {
+      "version": "0.4.4",
+      "tags": ["beta"],
+      "author": "@chavyleung",
+      "icon": "https://avatars3.githubusercontent.com/u/29748519",
+      "repo": "https://github.com/chavyleung",
+      "notes": [
+        {
+          "name": "优化",
+          "descs": ["应用分类可以收纳"]
+        }
+      ]
+    },
+    {
+      "version": "0.4.3",
+      "tags": ["beta"],
+      "author": "@chavyleung",
+      "icon": "https://avatars3.githubusercontent.com/u/29748519",
+      "repo": "https://github.com/chavyleung",
+      "notes": [
+        {
+          "name": "修复",
+          "descs": ["删除&导入会话时 Loading 动画不能自动消失问题"]
+        }
+      ]
+    },
+    {
+      "version": "0.4.2",
+      "tags": ["beta"],
+      "author": "@chavyleung",
+      "icon": "https://avatars3.githubusercontent.com/u/29748519",
+      "repo": "https://github.com/chavyleung",
+      "notes": [
+        {
+          "name": "修复",
+          "descs": ["部分情况下保存数据不生效问题 (实验)", "Rewrite正则 (注意更新正则)"]
+        },
+        {
+          "name": "移除",
+          "descs": ["修复VPN断连设置项", "自动更新订阅 (可手动更新)"]
+        }
+      ]
+    },
+    {
+      "version": "0.4.1",
+      "tags": ["beta"],
+      "author": "@chavyleung",
+      "icon": "https://avatars3.githubusercontent.com/u/29748519",
+      "repo": "https://github.com/chavyleung",
+      "notes": [
+        {
+          "name": "增加",
+          "descs": ["修复VPN断连设置项 (实验)"]
+        }
+      ]
+    },
+    {
+      "version": "0.4.0",
+      "tags": ["beta"],
+      "author": "@chavyleung",
+      "icon": "https://avatars3.githubusercontent.com/u/29748519",
+      "repo": "https://github.com/chavyleung",
+      "notes": [
+        {
+          "name": "新增",
+          "descs": ["可以修改已保存的会话"]
+        }
+      ]
+    },
+    {
+      "version": "0.3.10",
+      "tags": ["beta"],
+      "author": "@chavyleung",
+      "icon": "https://avatars3.githubusercontent.com/u/29748519",
+      "repo": "https://github.com/chavyleung",
+      "notes": [
+        {
+          "name": "优化",
+          "descs": ["可以把当前会话保存至指定会话 (注意先保存设置再使用`保存至`)", "可以设置刷新等待秒数 (为 0 时直接刷新不弹窗)"]
+        }
+      ]
+    },
+    {
+      "version": "0.3.9",
+      "tags": ["beta"],
+      "author": "@chavyleung",
+      "icon": "https://avatars3.githubusercontent.com/u/29748519",
+      "repo": "https://github.com/chavyleung",
+      "notes": [
+        {
+          "name": "优化",
+          "descs": ["可以复制单个应用订阅地址", "增加底部间距避免界面被悬浮按钮遮挡"]
+        }
+      ]
+    },
+    {
       "version": "0.3.8",
       "tags": ["beta"],
       "author": "@chavyleung",
